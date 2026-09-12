@@ -8,11 +8,12 @@ vendas, royalties, fornecedores e chamados de suporte.
 - **Java 17**
 - **Javalin** — servidor HTTP e roteamento
 - **Hibernate/JPA** — persistência (ORM), sem Spring Data
-- **H2 Database** — banco relacional em arquivo local (sem instalação)
-- **Flyway** — migrations do banco de dados
+- **H2 Database** — banco relacional em arquivo local (`./data/franquias.mv.db`), sem instalação
+- **Flyway** — migrations do banco de dados (schema versionado em `src/main/resources/db/migration`)
 - **Jackson** — serialização JSON
 - **Hibernate Validator (Bean Validation)** — validação de dados de entrada
-- **JJWT** — autenticação via JSON Web Token
+- **Hash de senha** com BCrypt (biblioteca `jBCrypt`)
+- **JJWT** — geração e validação de tokens JWT
 - **Maven** — build e gerenciamento de dependências
 
 > Projeto construído sem frameworks de alto nível (como Spring Boot): a injeção de
@@ -37,10 +38,17 @@ java -jar target/franquias-api.jar
 
 A API sobe em `http://localhost:8080`.
 
-Teste rápido:
-```bash
-curl http://localhost:8080/api/health
+Ao iniciar, a aplicação roda automaticamente as migrations do Flyway, criando o
+arquivo do banco H2 em `./data/franquias.mv.db` na primeira execução.
+
+Teste rápido (PowerShell):
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8080/api/health"
+Invoke-RestMethod -Uri "http://localhost:8080/api/health/db"
 ```
+
+O segundo endpoint confirma que a conexão JPA/Hibernate com o banco está
+funcionando (retorna a contagem de usuários cadastrados, 0 neste ponto).
 
 ## Estrutura do projeto
 
@@ -54,15 +62,32 @@ franquias-api/
 │   ├── repositories/    # Acesso a dados (JPA/Hibernate)
 │   ├── data/            # Configuração de conexão com o banco
 │   └── config/          # Bootstrap da aplicação (Main.java)
-├── src/main/resources/  # Configurações, migrations Flyway
+├── src/main/resources/
+│   ├── META-INF/persistence.xml   # Configuração do Hibernate/JPA
+│   └── db/migration/              # Migrations Flyway (versionamento do schema)
 └── pom.xml
 ```
+
+## Modelo de dados
+
+Entidades principais: `Usuario`, `Franqueadora`, `Franqueado`, `UnidadeFranqueada`,
+`Categoria`, `ProdutoServico`, `Fornecedor`, `Estoque`, `MovimentacaoEstoque`,
+`Venda`, `ItemVenda`, `Royalty`, `ChamadoSuporte`.
+
+Decisões de modelagem:
+- Fornecedores são globais à rede (podem atender várias unidades), associados a
+  produtos/serviços via relação N—N.
+- O catálogo de produtos/serviços é único para toda a rede (padronizado pela
+  franqueadora), e não por unidade.
+- O schema do banco é controlado exclusivamente pelo Flyway; o Hibernate está
+  configurado em modo `validate` (nunca gera/altera tabelas sozinho), garantindo
+  que entidades e schema fiquem sempre sincronizados de forma rastreável.
 
 ## Status do desenvolvimento
 
 - [x] Setup inicial do projeto
-- [ ] Modelagem de dados e banco
-- [ ] Autenticação e perfis de usuário
+- [x] Modelagem de dados e banco (entidades JPA + migration Flyway)
+- [x] Usuários, autenticação e perfis (login JWT, controle de acesso por perfil)
 - [ ] Franqueadora, unidades e franqueados
 - [ ] Catálogo de produtos/serviços
 - [ ] Fornecedores
@@ -71,3 +96,56 @@ franquias-api/
 - [ ] Royalties/financeiro
 - [ ] Chamados de suporte
 - [ ] Relatórios e indicadores
+
+## Usuário administrador inicial (seed)
+
+Criado automaticamente pela migration `V2__seed_admin.sql`, pois é necessário
+para conseguir logar e cadastrar os demais usuários:
+
+- **E-mail:** `admin@franquias.com`
+- **Senha:** `admin123`
+
+## Autenticação
+
+Todas as rotas (exceto `/api/health*` e `/api/auth/login`) exigem um token JWT
+no header:
+```
+Authorization: Bearer <token>
+```
+
+### Endpoints disponíveis nesta parte
+
+| Método | Rota                          | Perfil exigido        | Descrição                          |
+|--------|-------------------------------|------------------------|-------------------------------------|
+| POST   | `/api/auth/login`             | público                | Login, retorna o token JWT          |
+| POST   | `/api/usuarios`                | ADMIN_FRANQUEADORA      | Cadastra um novo usuário            |
+| GET    | `/api/usuarios`                | ADMIN_FRANQUEADORA      | Lista todos os usuários             |
+| GET    | `/api/usuarios/me`             | qualquer autenticado    | Dados do usuário logado             |
+| GET    | `/api/usuarios/{id}`           | ADMIN_FRANQUEADORA      | Busca usuário por ID                |
+| PATCH  | `/api/usuarios/{id}/ativar`    | ADMIN_FRANQUEADORA      | Reativa um usuário                  |
+| PATCH  | `/api/usuarios/{id}/inativar`  | ADMIN_FRANQUEADORA      | Inativa um usuário                  |
+
+### Testando no PowerShell
+
+```powershell
+# 1. Login — guarda o token numa variável
+$resposta = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" `
+    -Method Post -ContentType "application/json" `
+    -Body '{"email":"admin@franquias.com","senha":"admin123"}'
+$token = $resposta.token
+$resposta
+
+# 2. Cadastrar um novo usuário (usando o token do admin)
+Invoke-RestMethod -Uri "http://localhost:8080/api/usuarios" `
+    -Method Post -ContentType "application/json" `
+    -Headers @{ Authorization = "Bearer $token" } `
+    -Body '{"nome":"Maria Souza","email":"maria@franquias.com","senha":"123456","perfil":"ADMIN_FRANQUEADORA"}'
+
+# 3. Listar usuários
+Invoke-RestMethod -Uri "http://localhost:8080/api/usuarios" `
+    -Headers @{ Authorization = "Bearer $token" }
+
+# 4. Ver o próprio perfil
+Invoke-RestMethod -Uri "http://localhost:8080/api/usuarios/me" `
+    -Headers @{ Authorization = "Bearer $token" }
+```
