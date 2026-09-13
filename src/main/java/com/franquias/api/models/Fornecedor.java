@@ -35,8 +35,14 @@ public class Fornecedor {
     /**
      * Um fornecedor pode atender/fornecer vários produtos ou serviços da rede,
      * e um produto pode ter mais de um fornecedor associado.
+     *
+     * fetch = EAGER (diferente do padrão LAZY do @ManyToMany): como o
+     * FornecedorResponse sempre precisa mostrar os produtos associados, e
+     * nossos repositories fecham a conexão logo após buscar os dados,
+     * deixamos isso explícito para evitar um LazyInitializationException
+     * (o mesmo tipo de bug já corrigido em Unidade e Estoque).
      */
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "fornecedor_produto",
             joinColumns = @JoinColumn(name = "fornecedor_id"),

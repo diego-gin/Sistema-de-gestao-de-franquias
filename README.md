@@ -91,7 +91,7 @@ Decisões de modelagem:
 - [x] Franqueadora, unidades e franqueados
 - [x] Catálogo de produtos/serviços
 - [x] Estoque por unidade (entrada/saída, saldo mínimo, impedimento de negativo)
-- [ ] Fornecedores
+- [x] Fornecedores
 - [ ] Vendas
 - [ ] Royalties/financeiro
 - [ ] Chamados de suporte
@@ -302,3 +302,73 @@ $bodySaidaExcessiva = @{
 } | ConvertTo-Json
 Invoke-RestMethod -Uri "http://localhost:8080/api/estoques/movimentacoes" -Method Post -ContentType "application/json" -Headers $headers -Body $bodySaidaExcessiva
 ```
+
+## Parte 7 — Fornecedores
+
+| Método | Rota                                | Perfil exigido        | Descrição                              |
+|--------|---------------------------------------|-------------------------|-------------------------------------------|
+| POST   | `/api/fornecedores`                    | ADMIN_FRANQUEADORA       | Cadastra fornecedor                       |
+| GET    | `/api/fornecedores`                    | qualquer autenticado     | Lista/filtra fornecedores                 |
+| GET    | `/api/fornecedores/{id}`               | qualquer autenticado     | Busca por ID                              |
+| PUT    | `/api/fornecedores/{id}`               | ADMIN_FRANQUEADORA       | Atualiza dados                            |
+| PATCH  | `/api/fornecedores/{id}/status`        | ADMIN_FRANQUEADORA       | Ativa/inativa                             |
+| PUT    | `/api/fornecedores/{id}/produtos`      | ADMIN_FRANQUEADORA       | Substitui a lista de produtos associados  |
+
+Filtros em `GET /api/fornecedores` (opcionais):
+```
+?nome=&cnpj=&status=ATIVO|INATIVO
+```
+
+### Testando no PowerShell
+
+```powershell
+# Reaproveita $headers e $produto da sessão
+
+# 1. Cadastrar fornecedor
+$fornecedor = Invoke-RestMethod -Uri "http://localhost:8080/api/fornecedores" -Method Post -ContentType "application/json" -Headers $headers -Body '{"nome":"Distribuidora ABC","cnpj":"11222333000144","contato":"Carlos","telefone":"1144445555","email":"contato@abc.com"}'
+$fornecedor
+
+# 2. Associar produtos a esse fornecedor
+$bodyAssociar = @{ produtoIds = @($produto.id) } | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/fornecedores/$($fornecedor.id)/produtos" -Method Put -ContentType "application/json" -Headers $headers -Body $bodyAssociar
+
+# 3. Agora dá pra fazer uma entrada de estoque informando o fornecedor
+$bodyEntradaComFornecedor = @{
+    unidadeId        = $unidade.id
+    produtoServicoId = $produto.id
+    tipo             = "ENTRADA"
+    quantidade       = 20
+    observacao       = "Reposição"
+    fornecedorId     = $fornecedor.id
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/estoques/movimentacoes" -Method Post -ContentType "application/json" -Headers $headers -Body $bodyEntradaComFornecedor
+```
+
+## Script de apoio: bootstrap-sessao.ps1
+
+Toda vez que você abre um **novo terminal** do PowerShell, as variáveis (`$token`, `$produto`, `$unidade` etc.) se perdem — é assim que o PowerShell funciona, cada janela tem sua própria memória.
+
+Para não ter que ficar recriando dados de teste toda hora, use o script `bootstrap-sessao.ps1` (na raiz do projeto): ele **busca** os dados que já existem no banco (não cria nada novo) e te devolve todas as variáveis prontas para uso.
+
+```powershell
+# Só na primeira vez, se der erro de "execução de scripts desabilitada":
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Rode isso no início de qualquer sessão nova (com o servidor já rodando):
+.\bootstrap-sessao.ps1
+```
+
+Ao final, ele mostra algo como:
+```
+Login OK. Usuario: Administrador da Franqueadora (ADMIN_FRANQUEADORA)
+Categoria: Bebidas (id 1)
+Produto: Refrigerante Lata 350ml (id 33)
+Franqueadora: Rede Exemplo Franquias LTDA (id 1)
+Franqueado: João da Silva (id 1)
+Unidade: Unidade Centro (id 1)
+Fornecedor: Distribuidora ABC (id 1)
+
+Pronto! Variaveis disponiveis: $token, $headers, $categoria, $produto, $franqueadora, $franqueadoResp, $unidade, $fornecedor
+```
+
+Depois disso, é só usar `$produto.id`, `$unidade.id` etc. normalmente nos comandos de teste — sem precisar recriar nada.
