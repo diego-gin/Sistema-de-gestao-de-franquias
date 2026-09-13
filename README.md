@@ -88,10 +88,10 @@ Decisões de modelagem:
 - [x] Setup inicial do projeto
 - [x] Modelagem de dados e banco (entidades JPA + migration Flyway)
 - [x] Usuários, autenticação e perfis (login JWT, controle de acesso por perfil)
-- [ ] Franqueadora, unidades e franqueados
-- [ ] Catálogo de produtos/serviços
+- [x] Franqueadora, unidades e franqueados
+- [x] Catálogo de produtos/serviços
+- [x] Estoque por unidade (entrada/saída, saldo mínimo, impedimento de negativo)
 - [ ] Fornecedores
-- [ ] Estoque
 - [ ] Vendas
 - [ ] Royalties/financeiro
 - [ ] Chamados de suporte
@@ -148,4 +148,157 @@ Invoke-RestMethod -Uri "http://localhost:8080/api/usuarios" `
 # 4. Ver o próprio perfil
 Invoke-RestMethod -Uri "http://localhost:8080/api/usuarios/me" `
     -Headers @{ Authorization = "Bearer $token" }
+```
+
+## Parte 4 — Franqueadora, Unidades e Franqueados
+
+| Método | Rota                              | Perfil exigido                          | Descrição                    |
+|--------|------------------------------------|-------------------------------------------|--------------------------------|
+| POST   | `/api/franqueadoras`               | ADMIN_FRANQUEADORA                        | Cadastra a franqueadora (rede) |
+| GET    | `/api/franqueadoras`               | ADMIN_FRANQUEADORA                        | Lista franqueadoras            |
+| GET    | `/api/franqueadoras/{id}`          | ADMIN_FRANQUEADORA                        | Busca por ID                   |
+| POST   | `/api/franqueados`                 | ADMIN_FRANQUEADORA                        | Cadastra um responsável        |
+| GET    | `/api/franqueados`                 | ADMIN_FRANQUEADORA                        | Lista franqueados               |
+| GET    | `/api/franqueados/{id}`            | ADMIN_FRANQUEADORA                        | Busca por ID                   |
+| POST   | `/api/unidades`                    | ADMIN_FRANQUEADORA                        | Cadastra uma unidade            |
+| GET    | `/api/unidades`                    | ADMIN_FRANQUEADORA                        | Lista/filtra unidades           |
+| GET    | `/api/unidades/{id}`               | ADMIN, GESTOR_UNIDADE\*, OPERADOR\*       | Busca por ID                   |
+| PUT    | `/api/unidades/{id}`               | ADMIN_FRANQUEADORA                        | Atualiza dados da unidade       |
+| PATCH  | `/api/unidades/{id}/situacao`      | ADMIN_FRANQUEADORA                        | Ativa/inativa/suspende          |
+
+\* GESTOR_UNIDADE e OPERADOR só conseguem ver a **própria** unidade (a vinculada no seu token) — tentar ver outra retorna 403.
+
+Filtros disponíveis em `GET /api/unidades` (todos opcionais, combináveis):
+```
+?nome=&cidade=&cnpj=&responsavel=&situacao=ATIVA|INATIVA|SUSPENSA
+```
+
+### Testando no PowerShell (sequência completa)
+
+```powershell
+# (Re)faça o login se precisar
+$resposta = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method Post -ContentType "application/json" -Body '{"email":"admin@franquias.com","senha":"admin123"}'
+$token = $resposta.token
+$headers = @{ Authorization = "Bearer $token" }
+
+# 1. Cadastrar a franqueadora
+$franqueadora = Invoke-RestMethod -Uri "http://localhost:8080/api/franqueadoras" -Method Post -ContentType "application/json" -Headers $headers -Body '{"razaoSocial":"Rede Exemplo Franquias LTDA","cnpj":"12345678000190","dataFundacao":"2010-05-20"}'
+$franqueadora
+
+# 2. Cadastrar um franqueado (responsável pela unidade)
+$franqueado = Invoke-RestMethod -Uri "http://localhost:8080/api/franqueados" -Method Post -ContentType "application/json" -Headers $headers -Body '{"nome":"João da Silva","cpfCnpj":"12345678901","email":"joao@exemplo.com","telefone":"11999990000"}'
+$franqueado
+
+# 3. Cadastrar a unidade (usando os IDs retornados acima)
+$body = @{
+    franqueadoraId = $franqueadora.id
+    franqueadoId   = $franqueado.id
+    nomeFantasia   = "Unidade Centro"
+    cnpj           = "98765432000110"
+    endereco       = "Rua Principal, 100"
+    cidade         = "São Paulo"
+    estado         = "SP"
+    telefone       = "1133334444"
+    email          = "centro@exemplo.com"
+    dataInicio     = "2024-01-15"
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/unidades" -Method Post -ContentType "application/json" -Headers $headers -Body $body
+
+# 4. Listar unidades filtrando por cidade
+Invoke-RestMethod -Uri "http://localhost:8080/api/unidades?cidade=Paulo" -Headers $headers
+```
+
+## Parte 5 — Catálogo de Produtos/Serviços
+
+| Método | Rota                          | Perfil exigido        | Descrição                          |
+|--------|--------------------------------|-------------------------|--------------------------------------|
+| POST   | `/api/categorias`               | ADMIN_FRANQUEADORA       | Cadastra categoria                   |
+| GET    | `/api/categorias`               | qualquer autenticado     | Lista categorias                     |
+| GET    | `/api/categorias/{id}`          | qualquer autenticado     | Busca por ID                         |
+| POST   | `/api/produtos`                 | ADMIN_FRANQUEADORA       | Cadastra produto/serviço             |
+| GET    | `/api/produtos`                 | qualquer autenticado     | Lista/filtra produtos                |
+| GET    | `/api/produtos/{id}`            | qualquer autenticado     | Busca por ID                         |
+| PUT    | `/api/produtos/{id}`            | ADMIN_FRANQUEADORA       | Atualiza produto                     |
+| PATCH  | `/api/produtos/{id}/status`     | ADMIN_FRANQUEADORA       | Ativa/inativa produto                |
+
+Filtros em `GET /api/produtos` (opcionais, combináveis):
+```
+?nome=&categoriaId=&status=ATIVO|INATIVO
+```
+
+### Testando no PowerShell
+
+```powershell
+# Reaproveita $headers da sessão de login já feita antes
+
+# 1. Criar categoria
+$categoria = Invoke-RestMethod -Uri "http://localhost:8080/api/categorias" -Method Post -ContentType "application/json" -Headers $headers -Body '{"nome":"Bebidas","descricao":"Bebidas em geral"}'
+$categoria
+
+# 2. Criar produto
+$bodyProduto = @{
+    nome        = "Refrigerante Lata 350ml"
+    descricao   = "Refrigerante padrão da rede"
+    categoriaId = $categoria.id
+    precoBase   = 6.50
+} | ConvertTo-Json
+$bytesProduto = [System.Text.Encoding]::UTF8.GetBytes($bodyProduto)
+$produto = Invoke-RestMethod -Uri "http://localhost:8080/api/produtos" -Method Post -ContentType "application/json; charset=utf-8" -Headers $headers -Body $bytesProduto
+$produto
+
+# 3. Listar produtos da categoria
+Invoke-RestMethod -Uri "http://localhost:8080/api/produtos?categoriaId=$($categoria.id)" -Headers $headers
+```
+
+## Parte 6 — Estoque por Unidade
+
+| Método | Rota                                   | Perfil exigido                             | Descrição                             |
+|--------|------------------------------------------|-----------------------------------------------|------------------------------------------|
+| POST   | `/api/estoques/movimentacoes`             | ADMIN, GESTOR_UNIDADE\*, OPERADOR\*           | Registra ENTRADA ou SAÍDA               |
+| GET    | `/api/estoques`                           | qualquer autenticado                          | Lista/filtra estoques                    |
+| GET    | `/api/estoques/{id}`                      | ADMIN, GESTOR_UNIDADE\*, OPERADOR\*           | Busca um registro de estoque             |
+| GET    | `/api/estoques/{id}/movimentacoes`        | ADMIN, GESTOR_UNIDADE\*, OPERADOR\*           | Histórico de movimentações               |
+| PATCH  | `/api/estoques/{id}/minimo`               | ADMIN, GESTOR_UNIDADE\*                       | Define o estoque mínimo                  |
+
+\* Sempre restrito à própria unidade (vinculada no token).
+
+Regras de negócio implementadas:
+- Se a unidade nunca teve o produto em estoque, a primeira **ENTRADA** cria o registro automaticamente com saldo inicial 0.
+- **SAÍDA** não pode deixar o saldo negativo — retorna `400` com o saldo atual na mensagem.
+- Saldo e histórico são gravados na mesma transação (não existe cenário onde o saldo muda sem deixar rastro).
+
+Filtros em `GET /api/estoques` (opcionais, combináveis):
+```
+?unidadeId=&produtoId=&abaixoMinimo=true
+```
+
+### Testando no PowerShell
+
+```powershell
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Reaproveita $headers, $categoria.id e $produto.id da Parte 5,
+# e o ID da unidade criada na Parte 4 (vamos chamar de $unidadeId)
+$unidadeId = 1  # ajuste se o seu ID for diferente
+
+# 1. Entrada de estoque (cria o registro automaticamente)
+$bodyEntrada = @{
+    unidadeId        = $unidadeId
+    produtoServicoId = $produto.id
+    tipo             = "ENTRADA"
+    quantidade       = 50
+    observacao       = "Estoque inicial"
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/estoques/movimentacoes" -Method Post -ContentType "application/json" -Headers $headers -Body $bodyEntrada
+
+# 2. Consultar o estoque da unidade
+Invoke-RestMethod -Uri "http://localhost:8080/api/estoques?unidadeId=$unidadeId" -Headers $headers
+
+# 3. Tentar uma saída maior que o saldo (deve dar erro 400)
+$bodySaidaExcessiva = @{
+    unidadeId        = $unidadeId
+    produtoServicoId = $produto.id
+    tipo             = "SAIDA"
+    quantidade       = 999
+} | ConvertTo-Json
+Invoke-RestMethod -Uri "http://localhost:8080/api/estoques/movimentacoes" -Method Post -ContentType "application/json" -Headers $headers -Body $bodySaidaExcessiva
 ```
