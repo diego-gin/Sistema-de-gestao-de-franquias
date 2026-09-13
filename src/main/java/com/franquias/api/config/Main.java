@@ -3,6 +3,7 @@ package com.franquias.api.config;
 import com.franquias.api.controllers.AuthController;
 import com.franquias.api.controllers.CategoriaController;
 import com.franquias.api.controllers.EstoqueController;
+import com.franquias.api.controllers.FornecedorController;
 import com.franquias.api.controllers.FranqueadoController;
 import com.franquias.api.controllers.FranqueadoraController;
 import com.franquias.api.controllers.ProdutoController;
@@ -156,5 +157,14 @@ public class Main {
         app.get("/api/estoques/{id}/movimentacoes", estoqueController::listarMovimentacoes, AppRole.AUTHENTICATED);
         app.patch("/api/estoques/{id}/minimo", estoqueController::atualizarMinimo,
                 AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE);
+
+        // ---------- Fornecedores ----------
+        FornecedorController fornecedorController = new FornecedorController();
+        app.post("/api/fornecedores", fornecedorController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/fornecedores", fornecedorController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/fornecedores/{id}", fornecedorController::buscarPorId, AppRole.AUTHENTICATED);
+        app.put("/api/fornecedores/{id}", fornecedorController::atualizar, AppRole.ADMIN_FRANQUEADORA);
+        app.patch("/api/fornecedores/{id}/status", fornecedorController::alterarStatus, AppRole.ADMIN_FRANQUEADORA);
+        app.put("/api/fornecedores/{id}/produtos", fornecedorController::associarProdutos, AppRole.ADMIN_FRANQUEADORA);
     }
 }
