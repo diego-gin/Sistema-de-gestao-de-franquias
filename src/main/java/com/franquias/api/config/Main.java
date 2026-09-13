@@ -1,6 +1,12 @@
 package com.franquias.api.config;
 
 import com.franquias.api.controllers.AuthController;
+import com.franquias.api.controllers.CategoriaController;
+import com.franquias.api.controllers.EstoqueController;
+import com.franquias.api.controllers.FranqueadoController;
+import com.franquias.api.controllers.FranqueadoraController;
+import com.franquias.api.controllers.ProdutoController;
+import com.franquias.api.controllers.UnidadeController;
 import com.franquias.api.controllers.UsuarioController;
 import com.franquias.api.data.DatabaseConfig;
 import com.franquias.api.data.JpaUtil;
@@ -105,5 +111,50 @@ public class Main {
         app.get("/api/usuarios/{id}", usuarioController::buscarPorId, AppRole.ADMIN_FRANQUEADORA);
         app.patch("/api/usuarios/{id}/ativar", usuarioController::ativar, AppRole.ADMIN_FRANQUEADORA);
         app.patch("/api/usuarios/{id}/inativar", usuarioController::inativar, AppRole.ADMIN_FRANQUEADORA);
+
+        // ---------- Franqueadora ----------
+        FranqueadoraController franqueadoraController = new FranqueadoraController();
+        app.post("/api/franqueadoras", franqueadoraController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/franqueadoras", franqueadoraController::listar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/franqueadoras/{id}", franqueadoraController::buscarPorId, AppRole.ADMIN_FRANQUEADORA);
+
+        // ---------- Franqueado (responsável pela unidade) ----------
+        FranqueadoController franqueadoController = new FranqueadoController();
+        app.post("/api/franqueados", franqueadoController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/franqueados", franqueadoController::listar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/franqueados/{id}", franqueadoController::buscarPorId, AppRole.ADMIN_FRANQUEADORA);
+
+        // ---------- Unidades Franqueadas ----------
+        UnidadeController unidadeController = new UnidadeController();
+        app.post("/api/unidades", unidadeController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/unidades", unidadeController::listar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/unidades/{id}", unidadeController::buscarPorId,
+                AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE, AppRole.OPERADOR);
+        app.put("/api/unidades/{id}", unidadeController::atualizar, AppRole.ADMIN_FRANQUEADORA);
+        app.patch("/api/unidades/{id}/situacao", unidadeController::alterarSituacao, AppRole.ADMIN_FRANQUEADORA);
+
+        // ---------- Categorias ----------
+        CategoriaController categoriaController = new CategoriaController();
+        app.post("/api/categorias", categoriaController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/categorias", categoriaController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/categorias/{id}", categoriaController::buscarPorId, AppRole.AUTHENTICATED);
+
+        // ---------- Produtos/Serviços ----------
+        ProdutoController produtoController = new ProdutoController();
+        app.post("/api/produtos", produtoController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/produtos", produtoController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/produtos/{id}", produtoController::buscarPorId, AppRole.AUTHENTICATED);
+        app.put("/api/produtos/{id}", produtoController::atualizar, AppRole.ADMIN_FRANQUEADORA);
+        app.patch("/api/produtos/{id}/status", produtoController::alterarStatus, AppRole.ADMIN_FRANQUEADORA);
+
+        // ---------- Estoque ----------
+        EstoqueController estoqueController = new EstoqueController();
+        app.post("/api/estoques/movimentacoes", estoqueController::registrarMovimentacao,
+                AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE, AppRole.OPERADOR);
+        app.get("/api/estoques", estoqueController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/estoques/{id}", estoqueController::buscarPorId, AppRole.AUTHENTICATED);
+        app.get("/api/estoques/{id}/movimentacoes", estoqueController::listarMovimentacoes, AppRole.AUTHENTICATED);
+        app.patch("/api/estoques/{id}/minimo", estoqueController::atualizarMinimo,
+                AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE);
     }
 }
