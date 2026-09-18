@@ -30,11 +30,7 @@ public class EstoqueRepository {
         }
     }
 
-    /**
-     * Busca dinâmica por unidade, produto e/ou "abaixo do mínimo" — todos
-     * os filtros são opcionais. "abaixoMinimo = true" compara duas colunas
-     * da própria linha (quantidadeAtual < quantidadeMinima).
-     */
+    // abaixoMinimo compara duas colunas da própria linha (quantidadeAtual < quantidadeMinima)
     public List<Estoque> buscar(Long unidadeId, Long produtoId, Boolean abaixoMinimo) {
         EntityManager em = JpaUtil.createEntityManager();
         try {
@@ -82,14 +78,7 @@ public class EstoqueRepository {
         }
     }
 
-    /**
-     * Registra uma movimentação de forma atômica: localiza (ou cria, com
-     * saldo inicial 0) o registro de Estoque da unidade/produto, atualiza o
-     * saldo e grava o histórico — tudo na mesma transação, para que o saldo
-     * e o histórico nunca fiquem dessincronizados.
-     *
-     * Regra de negócio: o saldo nunca pode ficar negativo.
-     */
+    // cria o estoque com saldo 0 se ainda não existir; saldo nunca fica negativo
     public MovimentacaoEstoque registrarMovimentacao(Long unidadeId, Long produtoId, TipoMovimentacao tipo,
                                                        int quantidade, String observacao, Long fornecedorId) {
         EntityManager em = JpaUtil.createEntityManager();

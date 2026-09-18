@@ -1,0 +1,545 @@
+### =========================================================
+### Franquias API - Coleção de testes
+###
+### Uso: VS Code com a extensão "REST Client" (Huachao Mao), ou
+### direto no HTTP Client do IntelliJ/JetBrains. Ambos suportam
+### o encadeamento usado aqui ({{login.response.body.token}}).
+###
+### Pré-requisito: rodar com o banco recém-criado (só com o seed
+### da migration V3, sem dados de teste manuais) - os IDs fixos
+### usados abaixo (unidade 1, produto 1 etc.) assumem isso.
+### =========================================================
+
+@baseUrl = http://localhost:8080
+
+### ---------------------------------------------------------
+### Health check
+### ---------------------------------------------------------
+
+### Health check simples
+GET {{baseUrl}}/api/health
+
+### Health check com banco
+GET {{baseUrl}}/api/health/db
+
+### ---------------------------------------------------------
+### Autenticação
+### ---------------------------------------------------------
+
+### Login como admin
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@franquias.com",
+  "senha": "admin123"
+}
+
+### Login como gestor de unidade (dado do seed)
+# @name loginGestor
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "fernanda.souza@saborexpress.com",
+  "senha": "123456"
+}
+
+### ---------------------------------------------------------
+### Usuários
+### ---------------------------------------------------------
+
+### Cadastrar usuário (ADMIN_FRANQUEADORA)
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "Novo Administrador",
+  "email": "novo.admin@franquias.com",
+  "senha": "123456",
+  "perfil": "ADMIN_FRANQUEADORA"
+}
+
+### Listar usuários
+GET {{baseUrl}}/api/usuarios
+Authorization: Bearer {{login.response.body.token}}
+
+### Dados do usuário autenticado
+GET {{baseUrl}}/api/usuarios/me
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar usuário por ID
+GET {{baseUrl}}/api/usuarios/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Inativar usuário
+PATCH {{baseUrl}}/api/usuarios/2/inativar
+Authorization: Bearer {{login.response.body.token}}
+
+### Reativar usuário
+PATCH {{baseUrl}}/api/usuarios/2/ativar
+Authorization: Bearer {{login.response.body.token}}
+
+### ---------------------------------------------------------
+### Franqueadora
+### ---------------------------------------------------------
+
+### Cadastrar franqueadora
+POST {{baseUrl}}/api/franqueadoras
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "razaoSocial": "Rede Teste LTDA",
+  "cnpj": "11111111000111",
+  "dataFundacao": "2018-01-01"
+}
+
+### Listar franqueadoras
+GET {{baseUrl}}/api/franqueadoras
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar franqueadora por ID
+GET {{baseUrl}}/api/franqueadoras/1
+Authorization: Bearer {{login.response.body.token}}
+
+### ---------------------------------------------------------
+### Franqueados
+### ---------------------------------------------------------
+
+### Cadastrar franqueado
+POST {{baseUrl}}/api/franqueados
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "Franqueado Teste",
+  "cpfCnpj": "99988877766",
+  "email": "franqueado.teste@franquias.com",
+  "telefone": "11900001111"
+}
+
+### Listar franqueados
+GET {{baseUrl}}/api/franqueados
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar franqueado por ID
+GET {{baseUrl}}/api/franqueados/1
+Authorization: Bearer {{login.response.body.token}}
+
+### ---------------------------------------------------------
+### Unidades
+### ---------------------------------------------------------
+
+### Cadastrar unidade
+POST {{baseUrl}}/api/unidades
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "franqueadoraId": 1,
+  "franqueadoId": 1,
+  "nomeFantasia": "Unidade Teste",
+  "cnpj": "77788899000122",
+  "endereco": "Rua Teste, 123",
+  "cidade": "Curitiba",
+  "estado": "PR",
+  "telefone": "4133334444",
+  "email": "teste@saborexpress.com",
+  "dataInicio": "2026-01-10"
+}
+
+### Listar unidades (sem filtro)
+GET {{baseUrl}}/api/unidades
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar unidades filtrando por cidade
+GET {{baseUrl}}/api/unidades?cidade=Paulo
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar unidades filtrando por situação
+GET {{baseUrl}}/api/unidades?situacao=INATIVA
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar unidade por ID
+GET {{baseUrl}}/api/unidades/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Atualizar unidade
+PUT {{baseUrl}}/api/unidades/1
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nomeFantasia": "Sabor Express - Paulista",
+  "endereco": "Av. Paulista, 1500 - Bela Vista",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "telefone": "1133221100",
+  "email": "paulista@saborexpress.com"
+}
+
+### Alterar situação da unidade
+PATCH {{baseUrl}}/api/unidades/3/situacao
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "situacao": "ATIVA"
+}
+
+### Tentar ver unidade de outra pessoa como gestor (deve dar 403)
+GET {{baseUrl}}/api/unidades/2
+Authorization: Bearer {{loginGestor.response.body.token}}
+
+### ---------------------------------------------------------
+### Categorias
+### ---------------------------------------------------------
+
+### Cadastrar categoria
+POST {{baseUrl}}/api/categorias
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "Sanduíches Naturais",
+  "descricao": "Opções mais saudáveis do cardápio"
+}
+
+### Listar categorias
+GET {{baseUrl}}/api/categorias
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar categoria por ID
+GET {{baseUrl}}/api/categorias/1
+Authorization: Bearer {{login.response.body.token}}
+
+### ---------------------------------------------------------
+### Produtos / Serviços
+### ---------------------------------------------------------
+
+### Cadastrar produto
+POST {{baseUrl}}/api/produtos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "Wrap de Frango",
+  "descricao": "Wrap integral com frango grelhado",
+  "categoriaId": 1,
+  "precoBase": 17.90
+}
+
+### Listar produtos (sem filtro)
+GET {{baseUrl}}/api/produtos
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar produtos por categoria
+GET {{baseUrl}}/api/produtos?categoriaId=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar produto por ID
+GET {{baseUrl}}/api/produtos/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Atualizar produto
+PUT {{baseUrl}}/api/produtos/1
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "X-Burger Clássico",
+  "descricao": "Pão, hambúrguer, queijo e salada",
+  "categoriaId": 1,
+  "precoBase": 19.90
+}
+
+### Inativar produto
+PATCH {{baseUrl}}/api/produtos/1/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "status": "INATIVO"
+}
+
+### ---------------------------------------------------------
+### Estoque
+### ---------------------------------------------------------
+
+### Registrar entrada de estoque
+POST {{baseUrl}}/api/estoques/movimentacoes
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 1,
+  "produtoServicoId": 3,
+  "tipo": "ENTRADA",
+  "quantidade": 20,
+  "observacao": "Reposição de X-Bacon",
+  "fornecedorId": 1
+}
+
+### Registrar saída de estoque
+POST {{baseUrl}}/api/estoques/movimentacoes
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 1,
+  "produtoServicoId": 1,
+  "tipo": "SAIDA",
+  "quantidade": 2,
+  "observacao": "Ajuste manual"
+}
+
+### Tentar saída maior que o saldo (deve dar 400)
+POST {{baseUrl}}/api/estoques/movimentacoes
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 1,
+  "produtoServicoId": 1,
+  "tipo": "SAIDA",
+  "quantidade": 999999
+}
+
+### Listar estoque de uma unidade
+GET {{baseUrl}}/api/estoques?unidadeId=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar apenas itens abaixo do mínimo
+GET {{baseUrl}}/api/estoques?abaixoMinimo=true
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar estoque por ID
+GET {{baseUrl}}/api/estoques/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Histórico de movimentações de um estoque
+GET {{baseUrl}}/api/estoques/1/movimentacoes
+Authorization: Bearer {{login.response.body.token}}
+
+### Definir estoque mínimo
+PATCH {{baseUrl}}/api/estoques/1/minimo
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "quantidadeMinima": 15
+}
+
+### ---------------------------------------------------------
+### Fornecedores
+### ---------------------------------------------------------
+
+### Cadastrar fornecedor
+POST {{baseUrl}}/api/fornecedores
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "Distribuidora Teste",
+  "cnpj": "12312312000199",
+  "contato": "Fulano de Tal",
+  "telefone": "1199998888",
+  "email": "contato@distteste.com"
+}
+
+### Listar fornecedores
+GET {{baseUrl}}/api/fornecedores
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar fornecedor por ID
+GET {{baseUrl}}/api/fornecedores/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Atualizar fornecedor
+PUT {{baseUrl}}/api/fornecedores/1
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "nome": "Distribuidora Carnes Premium",
+  "contato": "José Martins Junior",
+  "telefone": "1140028922",
+  "email": "contato@carnespremium.com"
+}
+
+### Inativar fornecedor
+PATCH {{baseUrl}}/api/fornecedores/1/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "status": "INATIVO"
+}
+
+### Substituir produtos associados ao fornecedor
+PUT {{baseUrl}}/api/fornecedores/1/produtos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "produtoIds": [1, 2, 3]
+}
+
+### ---------------------------------------------------------
+### Vendas
+### ---------------------------------------------------------
+
+### Registrar venda
+POST {{baseUrl}}/api/vendas
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 1,
+  "itens": [
+    { "produtoServicoId": 4, "quantidade": 2 },
+    { "produtoServicoId": 6, "quantidade": 1 }
+  ]
+}
+
+### Tentar vender em unidade inativa (deve dar 400)
+POST {{baseUrl}}/api/vendas
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 3,
+  "itens": [
+    { "produtoServicoId": 1, "quantidade": 1 }
+  ]
+}
+
+### Listar vendas de uma unidade
+GET {{baseUrl}}/api/vendas?unidadeId=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar vendas por período
+GET {{baseUrl}}/api/vendas?dataInicio=2026-08-01&dataFim=2026-08-31
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar venda por ID
+GET {{baseUrl}}/api/vendas/1
+Authorization: Bearer {{login.response.body.token}}
+
+### ---------------------------------------------------------
+### Royalties
+### ---------------------------------------------------------
+
+### Calcular royalty do mês corrente
+POST {{baseUrl}}/api/royalties/calcular
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 1,
+  "periodoReferencia": "2026-09",
+  "percentual": 5
+}
+
+### Listar royalties de uma unidade
+GET {{baseUrl}}/api/royalties?unidadeId=1
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar royalties pendentes
+GET {{baseUrl}}/api/royalties?situacaoPagamento=PENDENTE
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar royalty por ID
+GET {{baseUrl}}/api/royalties/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Marcar royalty como pago
+PATCH {{baseUrl}}/api/royalties/2/pagamento
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "situacaoPagamento": "PAGO"
+}
+
+### ---------------------------------------------------------
+### Chamados de suporte
+### ---------------------------------------------------------
+
+### Abrir chamado
+POST {{baseUrl}}/api/chamados
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "unidadeId": 1,
+  "categoria": "Operacional",
+  "prioridade": "MEDIA",
+  "descricao": "Dúvida sobre o processo de fechamento de caixa."
+}
+
+### Listar chamados em aberto
+GET {{baseUrl}}/api/chamados?status=ABERTO
+Authorization: Bearer {{login.response.body.token}}
+
+### Listar chamados de alta prioridade
+GET {{baseUrl}}/api/chamados?prioridade=ALTA
+Authorization: Bearer {{login.response.body.token}}
+
+### Buscar chamado por ID
+GET {{baseUrl}}/api/chamados/1
+Authorization: Bearer {{login.response.body.token}}
+
+### Encerrar chamado
+PATCH {{baseUrl}}/api/chamados/1/status
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "status": "FECHADO"
+}
+
+### ---------------------------------------------------------
+### Relatórios e indicadores
+### ---------------------------------------------------------
+
+### Faturamento por unidade
+GET {{baseUrl}}/api/relatorios/faturamento
+Authorization: Bearer {{login.response.body.token}}
+
+### Faturamento de agosto/2026
+GET {{baseUrl}}/api/relatorios/faturamento?dataInicio=2026-08-01&dataFim=2026-08-31
+Authorization: Bearer {{login.response.body.token}}
+
+### Ranking de unidades por faturamento
+GET {{baseUrl}}/api/relatorios/ranking-unidades
+Authorization: Bearer {{login.response.body.token}}
+
+### Royalties totais (gerado/pago/pendente/atrasado)
+GET {{baseUrl}}/api/relatorios/royalties-totais
+Authorization: Bearer {{login.response.body.token}}
+
+### Produtos mais vendidos
+GET {{baseUrl}}/api/relatorios/produtos-mais-vendidos
+Authorization: Bearer {{login.response.body.token}}
+
+### Estoque crítico
+GET {{baseUrl}}/api/relatorios/estoque-critico
+Authorization: Bearer {{login.response.body.token}}
+
+### Chamados por status
+GET {{baseUrl}}/api/relatorios/chamados-por-status
+Authorization: Bearer {{login.response.body.token}}
+
+### ---------------------------------------------------------
+### Documentação
+### ---------------------------------------------------------
+
+### Especificação OpenAPI (bruta)
+GET {{baseUrl}}/openapi.yaml
+
+### Swagger UI
+GET {{baseUrl}}/swagger

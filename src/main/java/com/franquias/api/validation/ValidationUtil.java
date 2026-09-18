@@ -9,11 +9,6 @@ import jakarta.validation.ValidatorFactory;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Valida objetos anotados com Bean Validation (@NotBlank, @Email, @Size, etc.)
- * e lança BadRequestException (HTTP 400) com uma mensagem legível caso
- * alguma regra seja violada.
- */
 public final class ValidationUtil {
 
     private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();

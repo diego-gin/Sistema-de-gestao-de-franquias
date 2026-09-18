@@ -25,11 +25,6 @@ public class EstoqueController {
         ctx.status(201).json(MovimentacaoResponse.fromEntity(movimentacao));
     }
 
-    /**
-     * Lista/filtra estoques. ADMIN_FRANQUEADORA pode ver de qualquer unidade
-     * (filtro opcional via query); GESTOR_UNIDADE/OPERADOR só veem a própria,
-     * independentemente do que for passado na query.
-     */
     public void listar(Context ctx) {
         Long unidadeId;
         if (AutorizacaoUnidadeUtil.isAdmin(ctx)) {

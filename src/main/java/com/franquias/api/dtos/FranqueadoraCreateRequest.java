@@ -12,7 +12,7 @@ public class FranqueadoraCreateRequest {
     @Pattern(regexp = "^[0-9./-]{14,18}$", message = "CNPJ em formato inválido")
     private String cnpj;
 
-    /** Formato esperado: AAAA-MM-DD. Opcional. */
+   // Formato esperado: AAAA-MM-DD
     private String dataFundacao;
 
     public String getRazaoSocial() { return razaoSocial; }

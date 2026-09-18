@@ -11,15 +11,6 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-/**
- * Geração e validação de tokens JWT.
- *
- * IMPORTANTE: em um ambiente real, a chave de assinatura deve vir de uma
- * variável de ambiente (ex: System.getenv("JWT_SECRET")), nunca fixa no
- * código-fonte. Está fixa aqui apenas para simplificar a execução deste
- * trabalho acadêmico — isso deve constar na análise crítica do relatório
- * como uma limitação conhecida.
- */
 public final class JwtUtil {
 
     private static final SecretKey CHAVE = Keys.hmacShaKeyFor(

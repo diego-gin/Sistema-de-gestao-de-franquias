@@ -3,11 +3,6 @@ package com.franquias.api.security;
 import com.franquias.api.exceptions.ForbiddenException;
 import io.javalin.http.Context;
 
-/**
- * Regra reutilizada por vários controllers: ADMIN_FRANQUEADORA acessa
- * qualquer unidade; GESTOR_UNIDADE e OPERADOR só acessam a unidade
- * vinculada ao próprio token.
- */
 public final class AutorizacaoUnidadeUtil {
 
     private AutorizacaoUnidadeUtil() {

@@ -3,9 +3,6 @@ package com.franquias.api.dtos;
 import com.franquias.api.models.Usuario;
 import com.franquias.api.models.enums.Perfil;
 
-/**
- * DTO de saída — nunca expõe o hash da senha, apenas dados seguros de exibir.
- */
 public class UsuarioResponse {
 
     private Long id;

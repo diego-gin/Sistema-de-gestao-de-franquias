@@ -23,11 +23,6 @@ public class UnidadeController {
         ctx.status(201).json(UnidadeResponse.fromEntity(unidade));
     }
 
-    /**
-     * Lista/filtra unidades — restrito a ADMIN_FRANQUEADORA (já garantido pela
-     * role da rota em Main.java). Aceita filtros via query string, todos opcionais:
-     * ?nome=&cidade=&cnpj=&responsavel=&situacao=ATIVA|INATIVA|SUSPENSA
-     */
     public void listar(Context ctx) {
         String nome = ctx.queryParam("nome");
         String cidade = ctx.queryParam("cidade");
@@ -46,10 +41,6 @@ public class UnidadeController {
         ctx.json(lista);
     }
 
-    /**
-     * ADMIN_FRANQUEADORA pode ver qualquer unidade.
-     * GESTOR_UNIDADE e OPERADOR só podem ver a própria unidade (vinculada no token).
-     */
     public void buscarPorId(Context ctx) {
         Long id = Long.parseLong(ctx.pathParam("id"));
         AutorizacaoUnidadeUtil.garantirAcessoAUnidade(ctx, id);

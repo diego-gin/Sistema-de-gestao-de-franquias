@@ -79,9 +79,6 @@ public class ItemVenda {
         this.subtotal = subtotal;
     }
 
-    /**
-     * Calcula o subtotal a partir da quantidade e preço unitário.
-     */
     public void calcularSubtotal() {
         this.subtotal = precoUnitario.multiply(BigDecimal.valueOf(quantidade));
     }

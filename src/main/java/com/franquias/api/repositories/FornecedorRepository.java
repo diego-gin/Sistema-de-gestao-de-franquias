@@ -58,7 +58,7 @@ public class FornecedorRepository {
         }
     }
 
-    /** Busca dinâmica por nome, CNPJ e/ou status — todos os filtros opcionais. */
+    // Busca dinâmica por nome, CNPJ e/ou status
     public List<Fornecedor> buscar(String nome, String cnpj, StatusFornecedor status) {
         EntityManager em = JpaUtil.createEntityManager();
         try {
@@ -88,10 +88,7 @@ public class FornecedorRepository {
         }
     }
 
-    /**
-     * Substitui a lista de produtos associados ao fornecedor, de forma
-     * atômica. Passar uma lista vazia remove todas as associações.
-     */
+    // Lista vazia remove todas as associações
     public Fornecedor associarProdutos(Long fornecedorId, List<Long> produtoIds) {
         EntityManager em = JpaUtil.createEntityManager();
         try {

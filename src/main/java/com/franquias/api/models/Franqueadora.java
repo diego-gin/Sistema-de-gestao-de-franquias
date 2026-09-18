@@ -25,8 +25,6 @@ public class Franqueadora {
     public Franqueadora() {
     }
 
-    // Getters e Setters
-
     public Long getId() {
         return id;
     }

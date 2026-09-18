@@ -18,19 +18,6 @@ import java.util.Optional;
 
 public class UnidadeFranqueadaRepository {
 
-    /**
-     * Salva (insere ou atualiza) uma unidade.
-     *
-     * Diferente do UsuarioRepository, aqui NÃO usamos em.getReference() para
-     * resolver franqueadora/franqueado: o Service já busca essas entidades
-     * completas antes de chamar este método (para poder validar que existem
-     * e retornar 404 com uma mensagem clara). Usar getReference() aqui
-     * substituiria esses objetos já carregados por proxies vazios, que
-     * quebrariam ao montar a resposta (UnidadeResponse precisa do nome da
-     * franqueadora/franqueado, não só do ID). Como não há cascade configurado
-     * na associação, o Hibernate usa o ID desses objetos normalmente para
-     * gravar a chave estrangeira, mesmo eles vindo de outra sessão.
-     */
     public UnidadeFranqueada salvar(UnidadeFranqueada unidade) {
         EntityManager em = JpaUtil.createEntityManager();
         try {
@@ -74,12 +61,6 @@ public class UnidadeFranqueadaRepository {
         }
     }
 
-    /**
-     * Busca dinâmica por nome, cidade, CNPJ, responsável (franqueado) e/ou
-     * situação — todos os filtros são opcionais (passe null para ignorar).
-     * Atende ao requisito de "buscar unidade por nome, cidade, CNPJ ou
-     * responsável" e "listar unidades ativas e inativas".
-     */
     public List<UnidadeFranqueada> buscar(String nome, String cidade, String cnpj,
                                            String responsavelNome, SituacaoUnidade situacao) {
         EntityManager em = JpaUtil.createEntityManager();

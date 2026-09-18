@@ -23,7 +23,6 @@ public class FornecedorController {
         ctx.status(201).json(FornecedorResponse.fromEntity(fornecedor));
     }
 
-    /** Filtros opcionais via query string: ?nome=&cnpj=&status=ATIVO|INATIVO */
     public void listar(Context ctx) {
         String nome = ctx.queryParam("nome");
         String cnpj = ctx.queryParam("cnpj");

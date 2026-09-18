@@ -51,8 +51,6 @@ public class UnidadeFranqueada {
     public UnidadeFranqueada() {
     }
 
-    // Getters e Setters
-
     public Long getId() {
         return id;
     }
@@ -149,9 +147,6 @@ public class UnidadeFranqueada {
         this.situacao = situacao;
     }
 
-    /**
-     * Regra de negócio: uma unidade inativa não pode registrar novas vendas.
-     */
     public boolean podeRegistrarVenda() {
         return this.situacao == SituacaoUnidade.ATIVA;
     }

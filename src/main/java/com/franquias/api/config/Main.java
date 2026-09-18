@@ -2,13 +2,17 @@ package com.franquias.api.config;
 
 import com.franquias.api.controllers.AuthController;
 import com.franquias.api.controllers.CategoriaController;
+import com.franquias.api.controllers.ChamadoController;
 import com.franquias.api.controllers.EstoqueController;
 import com.franquias.api.controllers.FornecedorController;
 import com.franquias.api.controllers.FranqueadoController;
 import com.franquias.api.controllers.FranqueadoraController;
 import com.franquias.api.controllers.ProdutoController;
+import com.franquias.api.controllers.RelatorioController;
+import com.franquias.api.controllers.RoyaltyController;
 import com.franquias.api.controllers.UnidadeController;
 import com.franquias.api.controllers.UsuarioController;
+import com.franquias.api.controllers.VendaController;
 import com.franquias.api.data.DatabaseConfig;
 import com.franquias.api.data.JpaUtil;
 import com.franquias.api.exceptions.ApiException;
@@ -19,16 +23,12 @@ import io.javalin.http.ContentType;
 import jakarta.persistence.EntityManager;
 import org.flywaydb.core.Flyway;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-/**
- * Ponto de entrada da aplicação.
- * Ordem de inicialização:
- *   1. Roda as migrations do Flyway (cria/atualiza as tabelas no H2).
- *   2. Inicializa o EntityManagerFactory (Hibernate/JPA).
- *   3. Sobe o servidor HTTP (Javalin), com controle de acesso por perfil
- *      e tratamento centralizado de exceções.
- */
+// migrations -> JPA -> servidor HTTP
 public class Main {
 
     public static void main(String[] args) {
@@ -40,8 +40,7 @@ public class Main {
             config.bundledPlugins.enableDevLogging();
         });
 
-        // Verifica token/perfil em toda rota já identificada pelo roteador
-        // (equivalente ao antigo AccessManager, removido no Javalin 6).
+        // substitui o AccessManager removido no Javalin 6
         app.beforeMatched(ApiAccessManager::checarAcesso);
 
         registrarTratamentoDeErros(app);
@@ -69,13 +68,11 @@ public class Main {
     }
 
     private static void registrarTratamentoDeErros(Javalin app) {
-        // Exceções de negócio conhecidas (400, 401, 403, 404, 409...)
         app.exception(ApiException.class, (e, ctx) -> {
             ctx.status(e.getStatusCode());
             ctx.json(Map.of("erro", e.getMessage()));
         });
 
-        // Qualquer outra exceção não prevista vira 500, sem vazar detalhes internos.
         app.exception(Exception.class, (e, ctx) -> {
             e.printStackTrace();
             ctx.status(500);
@@ -85,7 +82,6 @@ public class Main {
 
     private static void registrarRotas(Javalin app) {
 
-        // ---------- Health check ----------
         app.get("/api/health", ctx -> {
             ctx.contentType(ContentType.JSON);
             ctx.result("{\"status\":\"ok\",\"mensagem\":\"Franquias API rodando com sucesso\"}");
@@ -99,11 +95,22 @@ public class Main {
             }
         }, AppRole.ANYONE);
 
-        // ---------- Autenticação ----------
+        // Documentação
+        app.get("/openapi.yaml", ctx -> {
+            ctx.contentType("text/yaml; charset=utf-8");
+            ctx.result(lerRecurso("/openapi.yaml"));
+        }, AppRole.ANYONE);
+
+        app.get("/swagger", ctx -> {
+            ctx.contentType("text/html; charset=utf-8");
+            ctx.result(lerRecurso("/swagger.html"));
+        }, AppRole.ANYONE);
+
+        // Auth
         AuthController authController = new AuthController();
         app.post("/api/auth/login", authController::login, AppRole.ANYONE);
 
-        // ---------- Usuários ----------
+        // Usuários
         UsuarioController usuarioController = new UsuarioController();
 
         app.post("/api/usuarios", usuarioController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
@@ -113,19 +120,19 @@ public class Main {
         app.patch("/api/usuarios/{id}/ativar", usuarioController::ativar, AppRole.ADMIN_FRANQUEADORA);
         app.patch("/api/usuarios/{id}/inativar", usuarioController::inativar, AppRole.ADMIN_FRANQUEADORA);
 
-        // ---------- Franqueadora ----------
+        // Franqueadora
         FranqueadoraController franqueadoraController = new FranqueadoraController();
         app.post("/api/franqueadoras", franqueadoraController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/franqueadoras", franqueadoraController::listar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/franqueadoras/{id}", franqueadoraController::buscarPorId, AppRole.ADMIN_FRANQUEADORA);
 
-        // ---------- Franqueado (responsável pela unidade) ----------
+        // franqueado
         FranqueadoController franqueadoController = new FranqueadoController();
         app.post("/api/franqueados", franqueadoController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/franqueados", franqueadoController::listar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/franqueados/{id}", franqueadoController::buscarPorId, AppRole.ADMIN_FRANQUEADORA);
 
-        // ---------- Unidades Franqueadas ----------
+        // Unidades
         UnidadeController unidadeController = new UnidadeController();
         app.post("/api/unidades", unidadeController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/unidades", unidadeController::listar, AppRole.ADMIN_FRANQUEADORA);
@@ -134,13 +141,13 @@ public class Main {
         app.put("/api/unidades/{id}", unidadeController::atualizar, AppRole.ADMIN_FRANQUEADORA);
         app.patch("/api/unidades/{id}/situacao", unidadeController::alterarSituacao, AppRole.ADMIN_FRANQUEADORA);
 
-        // ---------- Categorias ----------
+        // Categorias
         CategoriaController categoriaController = new CategoriaController();
         app.post("/api/categorias", categoriaController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/categorias", categoriaController::listar, AppRole.AUTHENTICATED);
         app.get("/api/categorias/{id}", categoriaController::buscarPorId, AppRole.AUTHENTICATED);
 
-        // ---------- Produtos/Serviços ----------
+        // Produtos
         ProdutoController produtoController = new ProdutoController();
         app.post("/api/produtos", produtoController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/produtos", produtoController::listar, AppRole.AUTHENTICATED);
@@ -148,7 +155,7 @@ public class Main {
         app.put("/api/produtos/{id}", produtoController::atualizar, AppRole.ADMIN_FRANQUEADORA);
         app.patch("/api/produtos/{id}/status", produtoController::alterarStatus, AppRole.ADMIN_FRANQUEADORA);
 
-        // ---------- Estoque ----------
+        // Estoque
         EstoqueController estoqueController = new EstoqueController();
         app.post("/api/estoques/movimentacoes", estoqueController::registrarMovimentacao,
                 AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE, AppRole.OPERADOR);
@@ -158,7 +165,7 @@ public class Main {
         app.patch("/api/estoques/{id}/minimo", estoqueController::atualizarMinimo,
                 AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE);
 
-        // ---------- Fornecedores ----------
+        // Fornecedores
         FornecedorController fornecedorController = new FornecedorController();
         app.post("/api/fornecedores", fornecedorController::cadastrar, AppRole.ADMIN_FRANQUEADORA);
         app.get("/api/fornecedores", fornecedorController::listar, AppRole.AUTHENTICATED);
@@ -166,5 +173,47 @@ public class Main {
         app.put("/api/fornecedores/{id}", fornecedorController::atualizar, AppRole.ADMIN_FRANQUEADORA);
         app.patch("/api/fornecedores/{id}/status", fornecedorController::alterarStatus, AppRole.ADMIN_FRANQUEADORA);
         app.put("/api/fornecedores/{id}/produtos", fornecedorController::associarProdutos, AppRole.ADMIN_FRANQUEADORA);
+
+        // Vendas
+        VendaController vendaController = new VendaController();
+        app.post("/api/vendas", vendaController::registrar,
+                AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE, AppRole.OPERADOR);
+        app.get("/api/vendas", vendaController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/vendas/{id}", vendaController::buscarPorId, AppRole.AUTHENTICATED);
+
+        // Royalties
+        RoyaltyController royaltyController = new RoyaltyController();
+        app.post("/api/royalties/calcular", royaltyController::calcular, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/royalties", royaltyController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/royalties/{id}", royaltyController::buscarPorId, AppRole.AUTHENTICATED);
+        app.patch("/api/royalties/{id}/pagamento", royaltyController::registrarPagamento, AppRole.ADMIN_FRANQUEADORA);
+
+        // Chamados
+        ChamadoController chamadoController = new ChamadoController();
+        app.post("/api/chamados", chamadoController::abrir,
+                AppRole.ADMIN_FRANQUEADORA, AppRole.GESTOR_UNIDADE, AppRole.OPERADOR);
+        app.get("/api/chamados", chamadoController::listar, AppRole.AUTHENTICATED);
+        app.get("/api/chamados/{id}", chamadoController::buscarPorId, AppRole.AUTHENTICATED);
+        app.patch("/api/chamados/{id}/status", chamadoController::atualizarStatus, AppRole.ADMIN_FRANQUEADORA);
+
+        // Relatórios
+        RelatorioController relatorioController = new RelatorioController();
+        app.get("/api/relatorios/faturamento", relatorioController::faturamentoPorUnidade, AppRole.AUTHENTICATED);
+        app.get("/api/relatorios/ranking-unidades", relatorioController::rankingUnidades, AppRole.ADMIN_FRANQUEADORA);
+        app.get("/api/relatorios/royalties-totais", relatorioController::royaltiesTotais, AppRole.AUTHENTICATED);
+        app.get("/api/relatorios/produtos-mais-vendidos", relatorioController::produtosMaisVendidos, AppRole.AUTHENTICATED);
+        app.get("/api/relatorios/estoque-critico", relatorioController::estoqueCritico, AppRole.AUTHENTICATED);
+        app.get("/api/relatorios/chamados-por-status", relatorioController::chamadosPorStatus, AppRole.AUTHENTICATED);
+    }
+
+    private static String lerRecurso(String caminho) {
+        try (InputStream is = Main.class.getResourceAsStream(caminho)) {
+            if (is == null) {
+                throw new IllegalStateException("Recurso não encontrado: " + caminho);
+            }
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("Erro ao ler recurso: " + caminho, e);
+        }
     }
 }

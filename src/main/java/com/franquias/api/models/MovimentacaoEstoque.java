@@ -29,9 +29,7 @@ public class MovimentacaoEstoque {
     @Column(length = 255)
     private String observacao;
 
-    /**
-     * Preenchido normalmente em movimentações de ENTRADA, indicando a origem.
-     */
+    // preenchido normalmente em movimentações de ENTRADA
     @ManyToOne
     @JoinColumn(name = "fornecedor_id")
     private Fornecedor fornecedor;

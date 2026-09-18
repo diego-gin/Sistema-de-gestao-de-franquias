@@ -18,9 +18,6 @@ public class Venda {
     @JoinColumn(name = "unidade_id", nullable = false)
     private UnidadeFranqueada unidade;
 
-    /**
-     * Usuário (operador/gestor) que registrou a venda.
-     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
@@ -31,7 +28,8 @@ public class Venda {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal valorTotal = BigDecimal.ZERO;
 
-    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, orphanRemoval = true)
+    // EAGER: evita LazyInitializationException ao montar a resposta após a conexão fechar
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ItemVenda> itens = new ArrayList<>();
 
     public Venda() {
@@ -90,10 +88,7 @@ public class Venda {
         this.itens.add(item);
     }
 
-    /**
-     * Regra de negócio: o valor total da venda é calculado a partir
-     * dos itens, quantidades e preços — nunca informado diretamente.
-     */
+    // nunca informado diretamente pelo cliente
     public void recalcularValorTotal() {
         this.valorTotal = itens.stream()
                 .map(ItemVenda::getSubtotal)

@@ -27,14 +27,10 @@ public class UnidadeFranqueadaService {
     public UnidadeFranqueada cadastrar(UnidadeCreateRequest dto) {
         ValidationUtil.validar(dto);
 
-        // Regra de negócio: não permitir duas unidades com o mesmo CNPJ.
         unidadeRepository.buscarPorCnpj(dto.getCnpj()).ifPresent(u -> {
             throw new ConflictException("Já existe uma unidade cadastrada com este CNPJ.");
         });
 
-        // Garante que as referências informadas realmente existem antes de
-        // tentar persistir (senão o erro só apareceria como uma falha de FK
-        // genérica do banco, difícil de entender pelo cliente da API).
         Franqueadora franqueadora = franqueadoraRepository.buscarPorId(dto.getFranqueadoraId())
                 .orElseThrow(() -> new NotFoundException("Franqueadora informada não existe."));
         Franqueado franqueado = franqueadoRepository.buscarPorId(dto.getFranqueadoId())

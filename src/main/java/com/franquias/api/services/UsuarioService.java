@@ -7,6 +7,7 @@ import com.franquias.api.exceptions.NotFoundException;
 import com.franquias.api.models.UnidadeFranqueada;
 import com.franquias.api.models.Usuario;
 import com.franquias.api.models.enums.Perfil;
+import com.franquias.api.repositories.UnidadeFranqueadaRepository;
 import com.franquias.api.repositories.UsuarioRepository;
 import com.franquias.api.security.PasswordUtil;
 import com.franquias.api.validation.ValidationUtil;
@@ -16,17 +17,16 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository = new UsuarioRepository();
+    private final UnidadeFranqueadaRepository unidadeRepository = new UnidadeFranqueadaRepository();
 
     public Usuario cadastrar(UsuarioCreateRequest dto) {
         ValidationUtil.validar(dto);
 
-        // Regra de negócio: não permitir e-mail duplicado.
         usuarioRepository.buscarPorEmail(dto.getEmail()).ifPresent(u -> {
             throw new ConflictException("Já existe um usuário cadastrado com este e-mail.");
         });
 
-        // Regra de negócio: ADMIN_FRANQUEADORA não pertence a uma unidade;
-        // GESTOR_UNIDADE e OPERADOR precisam estar vinculados a uma.
+        // ADMIN_FRANQUEADORA não pertence a uma unidade; os demais perfis precisam
         if (dto.getPerfil() == Perfil.ADMIN_FRANQUEADORA && dto.getUnidadeId() != null) {
             throw new BadRequestException("Usuário ADMIN_FRANQUEADORA não deve estar vinculado a uma unidade.");
         }
@@ -42,9 +42,9 @@ public class UsuarioService {
         usuario.setAtivo(true);
 
         if (dto.getUnidadeId() != null) {
-            UnidadeFranqueada unidadePlaceholder = new UnidadeFranqueada();
-            unidadePlaceholder.setId(dto.getUnidadeId());
-            usuario.setUnidade(unidadePlaceholder);
+            UnidadeFranqueada unidade = unidadeRepository.buscarPorId(dto.getUnidadeId())
+                    .orElseThrow(() -> new NotFoundException("Unidade informada não existe."));
+            usuario.setUnidade(unidade);
         }
 
         return usuarioRepository.salvar(usuario);

@@ -22,11 +22,7 @@ public class UsuarioCreateRequest {
     @NotNull(message = "Perfil é obrigatório")
     private Perfil perfil;
 
-    /**
-     * Obrigatório para perfis GESTOR_UNIDADE e OPERADOR.
-     * Deve ser nulo para ADMIN_FRANQUEADORA (acesso à rede inteira).
-     * A validação dessa regra é feita no UsuarioService, pois depende do perfil.
-     */
+    // obrigatório para GESTOR_UNIDADE/OPERADOR; nulo para ADMIN_FRANQUEADORA (validado no service)
     private Long unidadeId;
 
     public String getNome() {

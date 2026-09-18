@@ -16,8 +16,7 @@ public class AuthService {
     public LoginResponse autenticar(LoginRequest dto) {
         ValidationUtil.validar(dto);
 
-        // Mensagem de erro genérica de propósito: não revelamos se o problema
-        // foi o e-mail ou a senha, para não facilitar enumeração de usuários.
+        // Mensagem genérica: não revela se o problema foi e-mail ou senha
         Usuario usuario = usuarioRepository.buscarPorEmail(dto.getEmail())
                 .orElseThrow(() -> new UnauthorizedException("E-mail ou senha inválidos."));
 

@@ -1,7 +1,6 @@
 package com.franquias.api.repositories;
 
 import com.franquias.api.data.JpaUtil;
-import com.franquias.api.models.UnidadeFranqueada;
 import com.franquias.api.models.Usuario;
 import jakarta.persistence.EntityManager;
 
@@ -10,25 +9,10 @@ import java.util.Optional;
 
 public class UsuarioRepository {
 
-    /**
-     * Salva (insere ou atualiza) um usuário.
-     *
-     * Se o usuário tiver uma unidade associada apenas pelo ID (um "placeholder"
-     * criado pelo Service, sem consultar o banco), essa referência é resolvida
-     * aqui via em.getReference(), que cria um proxy gerenciado pela mesma
-     * transação sem precisar carregar a entidade inteira — evitando tanto uma
-     * consulta desnecessária quanto problemas de entidade "detached".
-     */
     public Usuario salvar(Usuario usuario) {
         EntityManager em = JpaUtil.createEntityManager();
         try {
             em.getTransaction().begin();
-
-            if (usuario.getUnidade() != null && usuario.getUnidade().getId() != null) {
-                UnidadeFranqueada referencia = em.getReference(
-                        UnidadeFranqueada.class, usuario.getUnidade().getId());
-                usuario.setUnidade(referencia);
-            }
 
             if (usuario.getId() == null) {
                 em.persist(usuario);

@@ -5,18 +5,6 @@ import com.franquias.api.exceptions.UnauthorizedException;
 import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 
-/**
- * Verifica autenticação (JWT) e autorização (perfil) para cada rota já
- * identificada pelo roteador.
- *
- * Registrado em Main.java via app.beforeMatched(ApiAccessManager::checarAcesso).
- * As roles exigidas por cada rota são anexadas no momento do registro
- * (ex: app.get(path, handler, AppRole.ADMIN_FRANQUEADORA)) e recuperadas
- * aqui através de ctx.routeRoles().
- *
- * Nota técnica: na versão 5 do Javalin isso era feito via uma interface
- * chamada AccessManager, removida na versão 6 em favor deste hook.
- */
 public final class ApiAccessManager {
 
     private ApiAccessManager() {

@@ -25,10 +25,7 @@ public class Usuario {
     @Column(nullable = false, length = 30)
     private Perfil perfil;
 
-    /**
-     * Unidade à qual o usuário pertence.
-     * Nula para usuários com perfil ADMIN_FRANQUEADORA (acesso a toda a rede).
-     */
+    // null para ADMIN_FRANQUEADORA (acesso à rede inteira)
     @ManyToOne
     @JoinColumn(name = "unidade_id")
     private UnidadeFranqueada unidade;
@@ -41,8 +38,6 @@ public class Usuario {
 
     public Usuario() {
     }
-
-    // Getters e Setters
 
     public Long getId() {
         return id;

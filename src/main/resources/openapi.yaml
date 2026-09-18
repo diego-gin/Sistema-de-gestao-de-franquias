@@ -1,0 +1,2279 @@
+openapi: 3.0.3
+info:
+  title: Franquias API
+  description: 'API REST para gestão de uma rede de franquias: unidades, produtos, estoque, vendas, royalties,
+    fornecedores e chamados de suporte.'
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Servidor local
+tags:
+- name: Auth
+- name: Usuarios
+- name: Franqueadora
+- name: Franqueados
+- name: Unidades
+- name: Categorias
+- name: Produtos
+- name: Estoque
+- name: Fornecedores
+- name: Vendas
+- name: Royalties
+- name: Chamados
+- name: Relatorios
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErroResponse:
+      type: object
+      properties:
+        erro:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: admin@franquias.com
+        senha:
+          type: string
+          example: admin123
+      required:
+      - email
+      - senha
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        nome:
+          type: string
+        perfil:
+          type: string
+          enum:
+          - ADMIN_FRANQUEADORA
+          - GESTOR_UNIDADE
+          - OPERADOR
+    UsuarioCreateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+        senha:
+          type: string
+          minLength: 6
+        perfil:
+          type: string
+          enum:
+          - ADMIN_FRANQUEADORA
+          - GESTOR_UNIDADE
+          - OPERADOR
+        unidadeId:
+          type: integer
+          format: int64
+          description: obrigatório para GESTOR_UNIDADE/OPERADOR, nulo para ADMIN_FRANQUEADORA
+          nullable: true
+      required:
+      - nome
+      - email
+      - senha
+      - perfil
+    UsuarioResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        email:
+          type: string
+        perfil:
+          type: string
+        unidadeId:
+          type: integer
+          format: int64
+          nullable: true
+        unidadeNome:
+          type: string
+          nullable: true
+        ativo:
+          type: boolean
+        criadoEm:
+          type: string
+    FranqueadoraCreateRequest:
+      type: object
+      properties:
+        razaoSocial:
+          type: string
+        cnpj:
+          type: string
+          example: '12345678000190'
+        dataFundacao:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - razaoSocial
+      - cnpj
+    FranqueadoraResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        razaoSocial:
+          type: string
+        cnpj:
+          type: string
+        dataFundacao:
+          type: string
+          nullable: true
+        ativa:
+          type: boolean
+    FranqueadoCreateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        cpfCnpj:
+          type: string
+        email:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+      required:
+      - nome
+      - cpfCnpj
+    FranqueadoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        cpfCnpj:
+          type: string
+        email:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+    UnidadeCreateRequest:
+      type: object
+      properties:
+        franqueadoraId:
+          type: integer
+          format: int64
+        franqueadoId:
+          type: integer
+          format: int64
+        nomeFantasia:
+          type: string
+        cnpj:
+          type: string
+        endereco:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        dataInicio:
+          type: string
+          format: date
+      required:
+      - franqueadoraId
+      - franqueadoId
+      - nomeFantasia
+      - cnpj
+      - dataInicio
+    UnidadeUpdateRequest:
+      type: object
+      properties:
+        nomeFantasia:
+          type: string
+        endereco:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+      required:
+      - nomeFantasia
+    UnidadeSituacaoRequest:
+      type: object
+      properties:
+        situacao:
+          type: string
+          enum:
+          - ATIVA
+          - INATIVA
+          - SUSPENSA
+      required:
+      - situacao
+    UnidadeResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        franqueadoraId:
+          type: integer
+          format: int64
+        franqueadoraNome:
+          type: string
+        franqueadoId:
+          type: integer
+          format: int64
+        franqueadoNome:
+          type: string
+        nomeFantasia:
+          type: string
+        cnpj:
+          type: string
+        endereco:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        dataInicio:
+          type: string
+        situacao:
+          type: string
+          enum:
+          - ATIVA
+          - INATIVA
+          - SUSPENSA
+    CategoriaCreateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+      required:
+      - nome
+    CategoriaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+    ProdutoCreateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        categoriaId:
+          type: integer
+          format: int64
+        precoBase:
+          type: number
+          format: double
+      required:
+      - nome
+      - categoriaId
+      - precoBase
+    ProdutoUpdateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        categoriaId:
+          type: integer
+          format: int64
+        precoBase:
+          type: number
+          format: double
+      required:
+      - nome
+      - categoriaId
+      - precoBase
+    ProdutoStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ATIVO
+          - INATIVO
+      required:
+      - status
+    ProdutoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        descricao:
+          type: string
+          nullable: true
+        categoriaId:
+          type: integer
+          format: int64
+        categoriaNome:
+          type: string
+        precoBase:
+          type: number
+          format: double
+        status:
+          type: string
+          enum:
+          - ATIVO
+          - INATIVO
+    MovimentacaoRequest:
+      type: object
+      properties:
+        unidadeId:
+          type: integer
+          format: int64
+        produtoServicoId:
+          type: integer
+          format: int64
+        tipo:
+          type: string
+          enum:
+          - ENTRADA
+          - SAIDA
+        quantidade:
+          type: integer
+          format: int64
+          minimum: 1
+        observacao:
+          type: string
+          nullable: true
+        fornecedorId:
+          type: integer
+          format: int64
+          nullable: true
+      required:
+      - unidadeId
+      - produtoServicoId
+      - tipo
+      - quantidade
+    MovimentacaoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        estoqueId:
+          type: integer
+          format: int64
+        unidadeNome:
+          type: string
+        produtoNome:
+          type: string
+        tipo:
+          type: string
+        quantidade:
+          type: integer
+          format: int64
+        dataMovimentacao:
+          type: string
+        observacao:
+          type: string
+          nullable: true
+        fornecedorNome:
+          type: string
+          nullable: true
+    EstoqueMinimoRequest:
+      type: object
+      properties:
+        quantidadeMinima:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - quantidadeMinima
+    EstoqueResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unidadeId:
+          type: integer
+          format: int64
+        unidadeNome:
+          type: string
+        produtoServicoId:
+          type: integer
+          format: int64
+        produtoNome:
+          type: string
+        quantidadeAtual:
+          type: integer
+          format: int64
+        quantidadeMinima:
+          type: integer
+          format: int64
+        abaixoDoMinimo:
+          type: boolean
+    FornecedorCreateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        cnpj:
+          type: string
+        contato:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+      required:
+      - nome
+      - cnpj
+    FornecedorUpdateRequest:
+      type: object
+      properties:
+        nome:
+          type: string
+        contato:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+      required:
+      - nome
+    FornecedorStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ATIVO
+          - INATIVO
+      required:
+      - status
+    AssociarProdutosRequest:
+      type: object
+      properties:
+        produtoIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required:
+      - produtoIds
+    FornecedorResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        cnpj:
+          type: string
+        contato:
+          type: string
+          nullable: true
+        telefone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum:
+          - ATIVO
+          - INATIVO
+        produtos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              nome:
+                type: string
+    ItemVendaRequest:
+      type: object
+      properties:
+        produtoServicoId:
+          type: integer
+          format: int64
+        quantidade:
+          type: integer
+          format: int64
+          minimum: 1
+      required:
+      - produtoServicoId
+      - quantidade
+    VendaCreateRequest:
+      type: object
+      properties:
+        unidadeId:
+          type: integer
+          format: int64
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemVendaRequest'
+      required:
+      - unidadeId
+      - itens
+    ItemVendaResponse:
+      type: object
+      properties:
+        produtoServicoId:
+          type: integer
+          format: int64
+        produtoNome:
+          type: string
+        quantidade:
+          type: integer
+          format: int64
+        precoUnitario:
+          type: number
+          format: double
+        subtotal:
+          type: number
+          format: double
+    VendaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unidadeId:
+          type: integer
+          format: int64
+        unidadeNome:
+          type: string
+        usuarioId:
+          type: integer
+          format: int64
+        usuarioNome:
+          type: string
+        dataVenda:
+          type: string
+        valorTotal:
+          type: number
+          format: double
+        itens:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemVendaResponse'
+    RoyaltyCalcularRequest:
+      type: object
+      properties:
+        unidadeId:
+          type: integer
+          format: int64
+        periodoReferencia:
+          type: string
+          example: 2026-09
+          pattern: ^\d{4}-\d{2}$
+        percentual:
+          type: number
+          format: double
+      required:
+      - unidadeId
+      - periodoReferencia
+      - percentual
+    RoyaltyPagamentoRequest:
+      type: object
+      properties:
+        situacaoPagamento:
+          type: string
+          enum:
+          - PENDENTE
+          - PAGO
+          - ATRASADO
+        dataPagamento:
+          type: string
+          format: date
+          nullable: true
+      required:
+      - situacaoPagamento
+    RoyaltyResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unidadeId:
+          type: integer
+          format: int64
+        unidadeNome:
+          type: string
+        periodoReferencia:
+          type: string
+        percentualAplicado:
+          type: number
+          format: double
+        faturamentoBase:
+          type: number
+          format: double
+        valorCalculado:
+          type: number
+          format: double
+        situacaoPagamento:
+          type: string
+          enum:
+          - PENDENTE
+          - PAGO
+          - ATRASADO
+        dataPagamento:
+          type: string
+          nullable: true
+    ChamadoCreateRequest:
+      type: object
+      properties:
+        unidadeId:
+          type: integer
+          format: int64
+        categoria:
+          type: string
+        prioridade:
+          type: string
+          enum:
+          - BAIXA
+          - MEDIA
+          - ALTA
+          - URGENTE
+        descricao:
+          type: string
+      required:
+      - unidadeId
+      - categoria
+      - prioridade
+      - descricao
+    ChamadoStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ABERTO
+          - EM_ANDAMENTO
+          - RESOLVIDO
+          - FECHADO
+      required:
+      - status
+    ChamadoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        unidadeId:
+          type: integer
+          format: int64
+        unidadeNome:
+          type: string
+        usuarioAberturaId:
+          type: integer
+          format: int64
+        usuarioAberturaNome:
+          type: string
+        categoria:
+          type: string
+        prioridade:
+          type: string
+        descricao:
+          type: string
+        status:
+          type: string
+        dataAbertura:
+          type: string
+        dataFechamento:
+          type: string
+          nullable: true
+    FaturamentoPorUnidadeResponse:
+      type: object
+      properties:
+        unidadeId:
+          type: integer
+          format: int64
+        unidadeNome:
+          type: string
+        faturamento:
+          type: number
+          format: double
+    RoyaltiesTotaisResponse:
+      type: object
+      properties:
+        totalGerado:
+          type: number
+          format: double
+        totalPago:
+          type: number
+          format: double
+        totalPendente:
+          type: number
+          format: double
+        totalAtrasado:
+          type: number
+          format: double
+    ProdutoMaisVendidoResponse:
+      type: object
+      properties:
+        produtoId:
+          type: integer
+          format: int64
+        produtoNome:
+          type: string
+        quantidadeTotal:
+          type: integer
+          format: int64
+    ChamadosPorStatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        quantidade:
+          type: integer
+          format: int64
+security:
+- bearerAuth: []
+paths:
+  /api/auth/login:
+    post:
+      summary: Login
+      tags:
+      - Auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login realizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/usuarios:
+    post:
+      summary: Cadastrar usuário
+      tags:
+      - Usuarios
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCreateRequest'
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+        '409':
+          description: E-mail já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar usuários
+      tags:
+      - Usuarios
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de usuários
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioResponse'
+  /api/usuarios/me:
+    get:
+      summary: Dados do usuário autenticado
+      tags:
+      - Usuarios
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Usuário logado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+  /api/usuarios/{id}:
+    get:
+      summary: Buscar usuário por ID
+      tags:
+      - Usuarios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Usuário encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '404':
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/usuarios/{id}/ativar:
+    patch:
+      summary: Ativar usuário
+      tags:
+      - Usuarios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '204':
+          description: Ativado
+  /api/usuarios/{id}/inativar:
+    patch:
+      summary: Inativar usuário
+      tags:
+      - Usuarios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '204':
+          description: Inativado
+  /api/franqueadoras:
+    post:
+      summary: Cadastrar franqueadora
+      tags:
+      - Franqueadora
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FranqueadoraCreateRequest'
+      responses:
+        '201':
+          description: Criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FranqueadoraResponse'
+        '409':
+          description: CNPJ já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar franqueadoras
+      tags:
+      - Franqueadora
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FranqueadoraResponse'
+  /api/franqueadoras/{id}:
+    get:
+      summary: Buscar franqueadora por ID
+      tags:
+      - Franqueadora
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FranqueadoraResponse'
+        '404':
+          description: Não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/franqueados:
+    post:
+      summary: Cadastrar franqueado
+      tags:
+      - Franqueados
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FranqueadoCreateRequest'
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FranqueadoResponse'
+        '409':
+          description: CPF/CNPJ já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar franqueados
+      tags:
+      - Franqueados
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FranqueadoResponse'
+  /api/franqueados/{id}:
+    get:
+      summary: Buscar franqueado por ID
+      tags:
+      - Franqueados
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FranqueadoResponse'
+        '404':
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/unidades:
+    post:
+      summary: Cadastrar unidade
+      tags:
+      - Unidades
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnidadeCreateRequest'
+      responses:
+        '201':
+          description: Criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnidadeResponse'
+        '409':
+          description: CNPJ já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+        '404':
+          description: Franqueadora ou franqueado inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar/filtrar unidades
+      tags:
+      - Unidades
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: nome
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por nome fantasia
+      - name: cidade
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por cidade
+      - name: cnpj
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por CNPJ
+      - name: responsavel
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por nome do franqueado
+      - name: situacao
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ATIVA, INATIVA ou SUSPENSA
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnidadeResponse'
+  /api/unidades/{id}:
+    get:
+      summary: Buscar unidade por ID
+      tags:
+      - Unidades
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnidadeResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+        '404':
+          description: Não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    put:
+      summary: Atualizar unidade
+      tags:
+      - Unidades
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnidadeUpdateRequest'
+      responses:
+        '200':
+          description: Atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnidadeResponse'
+  /api/unidades/{id}/situacao:
+    patch:
+      summary: Alterar situação da unidade
+      tags:
+      - Unidades
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnidadeSituacaoRequest'
+      responses:
+        '200':
+          description: Situação alterada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnidadeResponse'
+  /api/categorias:
+    post:
+      summary: Cadastrar categoria
+      tags:
+      - Categorias
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaCreateRequest'
+      responses:
+        '201':
+          description: Criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+        '409':
+          description: Nome já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar categorias
+      tags:
+      - Categorias
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoriaResponse'
+  /api/categorias/{id}:
+    get:
+      summary: Buscar categoria por ID
+      tags:
+      - Categorias
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriaResponse'
+        '404':
+          description: Não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/produtos:
+    post:
+      summary: Cadastrar produto/serviço
+      tags:
+      - Produtos
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProdutoCreateRequest'
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProdutoResponse'
+        '404':
+          description: Categoria inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar/filtrar produtos
+      tags:
+      - Produtos
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: nome
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por nome
+      - name: categoriaId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por categoria
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ATIVO ou INATIVO
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProdutoResponse'
+  /api/produtos/{id}:
+    get:
+      summary: Buscar produto por ID
+      tags:
+      - Produtos
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProdutoResponse'
+        '404':
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    put:
+      summary: Atualizar produto
+      tags:
+      - Produtos
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProdutoUpdateRequest'
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProdutoResponse'
+  /api/produtos/{id}/status:
+    patch:
+      summary: Ativar/inativar produto
+      tags:
+      - Produtos
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProdutoStatusRequest'
+      responses:
+        '200':
+          description: Status alterado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProdutoResponse'
+  /api/estoques/movimentacoes:
+    post:
+      summary: Registrar entrada/saída de estoque
+      tags:
+      - Estoque
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovimentacaoRequest'
+      responses:
+        '201':
+          description: Registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimentacaoResponse'
+        '400':
+          description: Saldo insuficiente para saída
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/estoques:
+    get:
+      summary: Listar/filtrar estoques
+      tags:
+      - Estoque
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade (apenas ADMIN)
+      - name: produtoId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por produto
+      - name: abaixoMinimo
+        in: query
+        required: false
+        schema:
+          type: boolean
+        description: true para listar apenas itens críticos
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstoqueResponse'
+  /api/estoques/{id}:
+    get:
+      summary: Buscar estoque por ID
+      tags:
+      - Estoque
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstoqueResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/estoques/{id}/movimentacoes:
+    get:
+      summary: Histórico de movimentações do estoque
+      tags:
+      - Estoque
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Histórico
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovimentacaoResponse'
+  /api/estoques/{id}/minimo:
+    patch:
+      summary: Definir estoque mínimo
+      tags:
+      - Estoque
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EstoqueMinimoRequest'
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EstoqueResponse'
+  /api/fornecedores:
+    post:
+      summary: Cadastrar fornecedor
+      tags:
+      - Fornecedores
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FornecedorCreateRequest'
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FornecedorResponse'
+        '409':
+          description: CNPJ já cadastrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar/filtrar fornecedores
+      tags:
+      - Fornecedores
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: nome
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por nome
+      - name: cnpj
+        in: query
+        required: false
+        schema:
+          type: string
+        description: filtro por CNPJ
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ATIVO ou INATIVO
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FornecedorResponse'
+  /api/fornecedores/{id}:
+    get:
+      summary: Buscar fornecedor por ID
+      tags:
+      - Fornecedores
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FornecedorResponse'
+        '404':
+          description: Não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    put:
+      summary: Atualizar fornecedor
+      tags:
+      - Fornecedores
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FornecedorUpdateRequest'
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FornecedorResponse'
+  /api/fornecedores/{id}/status:
+    patch:
+      summary: Ativar/inativar fornecedor
+      tags:
+      - Fornecedores
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FornecedorStatusRequest'
+      responses:
+        '200':
+          description: Status alterado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FornecedorResponse'
+  /api/fornecedores/{id}/produtos:
+    put:
+      summary: Substituir produtos associados ao fornecedor
+      tags:
+      - Fornecedores
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssociarProdutosRequest'
+      responses:
+        '200':
+          description: Associação atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FornecedorResponse'
+  /api/vendas:
+    post:
+      summary: Registrar venda
+      tags:
+      - Vendas
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VendaCreateRequest'
+      responses:
+        '201':
+          description: Venda registrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendaResponse'
+        '400':
+          description: Unidade inativa ou estoque insuficiente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar/filtrar vendas
+      tags:
+      - Vendas
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade (apenas ADMIN)
+      - name: dataInicio
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM-DD
+      - name: dataFim
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM-DD
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VendaResponse'
+  /api/vendas/{id}:
+    get:
+      summary: Buscar venda por ID
+      tags:
+      - Vendas
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendaResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/royalties/calcular:
+    post:
+      summary: Calcular/recalcular royalty do período
+      tags:
+      - Royalties
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoyaltyCalcularRequest'
+      responses:
+        '201':
+          description: Calculado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoyaltyResponse'
+        '404':
+          description: Unidade inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/royalties:
+    get:
+      summary: Listar/filtrar royalties
+      tags:
+      - Royalties
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade (apenas ADMIN)
+      - name: periodo
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM
+      - name: situacaoPagamento
+        in: query
+        required: false
+        schema:
+          type: string
+        description: PENDENTE, PAGO ou ATRASADO
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoyaltyResponse'
+  /api/royalties/{id}:
+    get:
+      summary: Buscar royalty por ID
+      tags:
+      - Royalties
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoyaltyResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/royalties/{id}/pagamento:
+    patch:
+      summary: Registrar situação de pagamento
+      tags:
+      - Royalties
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoyaltyPagamentoRequest'
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoyaltyResponse'
+  /api/chamados:
+    post:
+      summary: Abrir chamado
+      tags:
+      - Chamados
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamadoCreateRequest'
+      responses:
+        '201':
+          description: Aberto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChamadoResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+    get:
+      summary: Listar/filtrar chamados
+      tags:
+      - Chamados
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade (apenas ADMIN)
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+        description: ABERTO, EM_ANDAMENTO, RESOLVIDO ou FECHADO
+      - name: prioridade
+        in: query
+        required: false
+        schema:
+          type: string
+        description: BAIXA, MEDIA, ALTA ou URGENTE
+      responses:
+        '200':
+          description: Lista
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChamadoResponse'
+  /api/chamados/{id}:
+    get:
+      summary: Buscar chamado por ID
+      tags:
+      - Chamados
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChamadoResponse'
+        '403':
+          description: Sem acesso a essa unidade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroResponse'
+  /api/chamados/{id}/status:
+    patch:
+      summary: Atualizar/encerrar chamado
+      tags:
+      - Chamados
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        description: ID do recurso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChamadoStatusRequest'
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChamadoResponse'
+  /api/relatorios/faturamento:
+    get:
+      summary: Faturamento por unidade e período
+      tags:
+      - Relatorios
+      security:
+      - bearerAuth: []
+      parameters:
+      - &id001
+        name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade (ADMIN) / ignorado para demais perfis
+      - &id002
+        name: dataInicio
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM-DD
+      - &id003
+        name: dataFim
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM-DD
+      responses:
+        '200':
+          description: Faturamento agrupado por unidade
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FaturamentoPorUnidadeResponse'
+  /api/relatorios/ranking-unidades:
+    get:
+      summary: Ranking de unidades por faturamento
+      tags:
+      - Relatorios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: dataInicio
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM-DD
+      - name: dataFim
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM-DD
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: top N
+      responses:
+        '200':
+          description: Ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FaturamentoPorUnidadeResponse'
+  /api/relatorios/royalties-totais:
+    get:
+      summary: Totais de royalties por situação de pagamento
+      tags:
+      - Relatorios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade
+      - name: periodo
+        in: query
+        required: false
+        schema:
+          type: string
+        description: AAAA-MM
+      responses:
+        '200':
+          description: Totais
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoyaltiesTotaisResponse'
+  /api/relatorios/produtos-mais-vendidos:
+    get:
+      summary: Produtos/serviços mais vendidos
+      tags:
+      - Relatorios
+      security:
+      - bearerAuth: []
+      parameters:
+      - *id001
+      - *id002
+      - *id003
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: top N
+      responses:
+        '200':
+          description: Ranking de produtos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProdutoMaisVendidoResponse'
+  /api/relatorios/estoque-critico:
+    get:
+      summary: Itens de estoque abaixo do mínimo
+      tags:
+      - Relatorios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade
+      responses:
+        '200':
+          description: Itens críticos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EstoqueResponse'
+  /api/relatorios/chamados-por-status:
+    get:
+      summary: Contagem de chamados por status
+      tags:
+      - Relatorios
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: unidadeId
+        in: query
+        required: false
+        schema:
+          type: integer
+        description: filtro por unidade
+      responses:
+        '200':
+          description: Contagem
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChamadosPorStatusResponse'

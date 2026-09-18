@@ -15,12 +15,6 @@ import java.util.Optional;
 
 public class ProdutoServicoRepository {
 
-    /**
-     * Assim como em UnidadeFranqueadaRepository, NÃO usamos em.getReference()
-     * para a categoria: o Service já busca a Categoria completa antes de
-     * chamar este método, e precisamos dela completa (com o nome) para montar
-     * o ProdutoResponse depois.
-     */
     public ProdutoServico salvar(ProdutoServico produto) {
         EntityManager em = JpaUtil.createEntityManager();
         try {
@@ -49,11 +43,6 @@ public class ProdutoServicoRepository {
         }
     }
 
-    /**
-     * Busca dinâmica por nome, categoria e/ou status — todos os filtros são
-     * opcionais. Atende ao requisito "listar produtos/serviços por categoria
-     * e status" e "consulta por nome, categoria e situação".
-     */
     public List<ProdutoServico> buscar(String nome, Long categoriaId, StatusProduto status) {
         EntityManager em = JpaUtil.createEntityManager();
         try {

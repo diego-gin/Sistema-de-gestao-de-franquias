@@ -21,9 +21,7 @@ public class Royalty {
     @JoinColumn(name = "unidade_id", nullable = false)
     private UnidadeFranqueada unidade;
 
-    /**
-     * Período de referência no formato "YYYY-MM" (ex: "2026-09").
-     */
+    // formato "YYYY-MM"
     @Column(name = "periodo_referencia", nullable = false, length = 7)
     private String periodoReferencia;
 
@@ -113,9 +111,6 @@ public class Royalty {
         this.dataPagamento = dataPagamento;
     }
 
-    /**
-     * Regra de negócio: royalty = percentual configurado x faturamento do período.
-     */
     public void calcularValor() {
         this.valorCalculado = faturamentoBase
                 .multiply(percentualAplicado)

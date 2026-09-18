@@ -4,18 +4,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
-/**
- * Ponto único de acesso ao EntityManagerFactory (Hibernate/JPA).
- * Como não usamos um framework de DI, esta classe funciona como o
- * "container" manual que fornece EntityManagers para os Repositories.
- */
+// container manual do EntityManagerFactory
 public final class JpaUtil {
 
     private static final String PERSISTENCE_UNIT_NAME = "franquiasPU";
     private static volatile EntityManagerFactory entityManagerFactory;
 
     private JpaUtil() {
-        // classe utilitária, não deve ser instanciada
     }
 
     public static EntityManagerFactory getEntityManagerFactory() {

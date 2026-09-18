@@ -44,10 +44,6 @@ public class UsuarioController {
         ctx.status(204);
     }
 
-    /**
-     * Retorna os dados do próprio usuário autenticado (qualquer perfil pode chamar).
-     * Útil para o front-end confirmar quem está logado a partir do token.
-     */
     public void meuPerfil(Context ctx) {
         Long usuarioId = ctx.attribute("usuarioId");
         Usuario usuario = usuarioService.buscarPorId(usuarioId);

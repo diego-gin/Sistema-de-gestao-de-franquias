@@ -22,8 +22,6 @@ public class EstoqueService {
     public MovimentacaoEstoque registrarMovimentacao(MovimentacaoRequest dto) {
         ValidationUtil.validar(dto);
 
-        // Validações de existência com mensagens claras, antes de entrar na
-        // transação atômica do repository.
         unidadeRepository.buscarPorId(dto.getUnidadeId())
                 .orElseThrow(() -> new NotFoundException("Unidade informada não existe."));
         produtoRepository.buscarPorId(dto.getProdutoServicoId())

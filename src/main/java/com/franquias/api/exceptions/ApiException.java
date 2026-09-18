@@ -1,9 +1,6 @@
 package com.franquias.api.exceptions;
 
-/**
- * Classe base para exceções de negócio da API.
- * Cada subtipo carrega o código HTTP que deve ser retornado ao cliente.
- */
+// Cada subtipo carrega o código HTTP correspondente
 public abstract class ApiException extends RuntimeException {
 
     private final int statusCode;

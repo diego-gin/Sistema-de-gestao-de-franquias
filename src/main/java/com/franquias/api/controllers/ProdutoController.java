@@ -22,10 +22,6 @@ public class ProdutoController {
         ctx.status(201).json(ProdutoResponse.fromEntity(produto));
     }
 
-    /**
-     * Lista/filtra produtos. Aceita filtros opcionais via query string:
-     * ?nome=&categoriaId=&status=ATIVO|INATIVO
-     */
     public void listar(Context ctx) {
         String nome = ctx.queryParam("nome");
         String categoriaIdParam = ctx.queryParam("categoriaId");
